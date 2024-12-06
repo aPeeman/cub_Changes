@@ -343,7 +343,7 @@ struct DispatchHistogram
     {
         // HistogramSweepPolicy
         typedef AgentHistogramPolicy<
-                128,
+                384,
                 TScale<8>::VALUE,
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
@@ -373,15 +373,17 @@ struct DispatchHistogram
     //---------------------------------------------------------------------
     // Tuning policies of current PTX compiler pass
     //---------------------------------------------------------------------
-
+#ifdef USE_GPU_FUSION_DEFAULT_POLICY
 #if (CUB_PTX_ARCH >= 500)
     typedef Policy500 PtxPolicy;
 
-#else
+#else 
     typedef Policy350 PtxPolicy;
 
 #endif
-
+#else //USE_GPU_FUSION_DEFAULT_POLICY
+    typedef Policy500 PtxPolicy;
+#endif //USE_GPU_FUSION_DEFAULT_POLICY
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxHistogramSweepPolicy : PtxPolicy::HistogramSweepPolicy {};
 
@@ -411,6 +413,7 @@ struct DispatchHistogram
         {
             #if CUB_INCLUDE_HOST_CODE
                 // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
+            #ifdef USE_GPU_FUSION_DEFAULT_POLICY
                 if (ptx_version >= 500)
                 {
                     result = histogram_sweep_config.template Init<typename Policy500::HistogramSweepPolicy>();
@@ -419,6 +422,9 @@ struct DispatchHistogram
                 {
                     result = histogram_sweep_config.template Init<typename Policy350::HistogramSweepPolicy>();
                 }
+            #else //USE_GPU_FUSION_DEFAULT_POLICY
+                result = histogram_sweep_config.template Init<typename Policy500::HistogramSweepPolicy>();
+            #endif //USE_GPU_FUSION_DEFAULT_POLICY
             #endif
         }
         return result;

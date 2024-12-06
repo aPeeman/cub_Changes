@@ -104,7 +104,7 @@ CUB_NAMESPACE_BEGIN
 /// Number of threads per warp
 #ifndef CUB_LOG_WARP_THREADS
     #define CUB_LOG_WARP_THREADS(arch)                      \
-        (5)
+        (6)
     #define CUB_WARP_THREADS(arch)                          \
         (1 << CUB_LOG_WARP_THREADS(arch))
 
@@ -157,7 +157,7 @@ struct RegBoundScaling
 {
     enum {
         ITEMS_PER_THREAD    = CUB_MAX(1, NOMINAL_4B_ITEMS_PER_THREAD * 4 / CUB_MAX(4, sizeof(T))),
-        BLOCK_THREADS       = CUB_MIN(NOMINAL_4B_BLOCK_THREADS, (((1024 * 48) / (sizeof(T) * ITEMS_PER_THREAD)) + 31) / 32 * 32),
+        BLOCK_THREADS       = CUB_MIN(NOMINAL_4B_BLOCK_THREADS, (((1024 * 48) / (sizeof(T) * ITEMS_PER_THREAD)) + 63) / 64 * 64),
     };
 };
 
@@ -170,7 +170,7 @@ struct MemBoundScaling
 {
     enum {
         ITEMS_PER_THREAD    = CUB_MAX(1, CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T), NOMINAL_4B_ITEMS_PER_THREAD * 2)),
-        BLOCK_THREADS       = CUB_MIN(NOMINAL_4B_BLOCK_THREADS, (((1024 * 48) / (sizeof(T) * ITEMS_PER_THREAD)) + 31) / 32 * 32),
+        BLOCK_THREADS       = CUB_MIN(NOMINAL_4B_BLOCK_THREADS, (((1024 * 48) / (sizeof(T) * ITEMS_PER_THREAD)) + 63) / 64 * 64),
     };
 };
 

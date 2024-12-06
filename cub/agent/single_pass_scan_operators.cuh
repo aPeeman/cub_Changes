@@ -264,7 +264,7 @@ struct ScanTileState<T, true>
             TxnWord alias = ThreadLoad<LOAD_CG>(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx);
             tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
-        } while (WARP_ANY((tile_descriptor.status == SCAN_TILE_INVALID), 0xffffffff));
+        } while (WARP_ANY((tile_descriptor.status == SCAN_TILE_INVALID), 0xffffffffffffffff));
 
         status = tile_descriptor.status;
         value = tile_descriptor.value;
@@ -647,7 +647,7 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
             TxnWord alias = ThreadLoad<LOAD_CG>(d_tile_descriptors + TILE_STATUS_PADDING + tile_idx);
             tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
-        } while (WARP_ANY((tile_descriptor.status == SCAN_TILE_INVALID), 0xffffffff));
+        } while (WARP_ANY((tile_descriptor.status == SCAN_TILE_INVALID), 0xffffffffffffffff));
 
         status      = tile_descriptor.status;
         value.value = tile_descriptor.value;
@@ -758,7 +758,7 @@ struct TilePrefixCallbackOp
         exclusive_prefix = window_aggregate;
 
         // Keep sliding the window back until we come across a tile whose inclusive prefix is known
-        while (WARP_ALL((predecessor_status != StatusWord(SCAN_TILE_INCLUSIVE)), 0xffffffff))
+        while (WARP_ALL((predecessor_status != StatusWord(SCAN_TILE_INCLUSIVE)), 0xffffffffffffffff))
         {
             predecessor_idx -= CUB_PTX_WARP_THREADS;
 

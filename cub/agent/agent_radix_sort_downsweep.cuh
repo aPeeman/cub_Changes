@@ -332,7 +332,7 @@ struct AgentRadixSortDownsweep
     {
         // Register pressure work-around: moving valid_items through shfl prevents compiler
         // from reusing guards/addressing from prior guarded loads
-        valid_items = ShuffleIndex<CUB_PTX_WARP_THREADS>(valid_items, 0, 0xffffffff);
+        valid_items = ShuffleIndex<CUB_PTX_WARP_THREADS>(valid_items, 0, 0xffffffffffffffffull);
 
         BlockLoadKeysT(temp_storage.load_keys).Load(
             d_keys_in + block_offset, keys, valid_items, oob_item);
@@ -368,7 +368,7 @@ struct AgentRadixSortDownsweep
     {
         // Register pressure work-around: moving valid_items through shfl prevents compiler
         // from reusing guards/addressing from prior guarded loads
-        valid_items = ShuffleIndex<CUB_PTX_WARP_THREADS>(valid_items, 0, 0xffffffff);
+        valid_items = ShuffleIndex<CUB_PTX_WARP_THREADS>(valid_items, 0, 0xffffffffffffffffull);
 
         LoadDirectWarpStriped(threadIdx.x, d_keys_in + block_offset, keys, valid_items, oob_item);
     }
@@ -402,7 +402,7 @@ struct AgentRadixSortDownsweep
     {
         // Register pressure work-around: moving valid_items through shfl prevents compiler
         // from reusing guards/addressing from prior guarded loads
-        valid_items = ShuffleIndex<CUB_PTX_WARP_THREADS>(valid_items, 0, 0xffffffff);
+        valid_items = ShuffleIndex<CUB_PTX_WARP_THREADS>(valid_items, 0, 0xffffffffffffffffull);
 
         BlockLoadValuesT(temp_storage.load_values).Load(
             d_values_in + block_offset, values, valid_items);
@@ -436,7 +436,7 @@ struct AgentRadixSortDownsweep
     {
         // Register pressure work-around: moving valid_items through shfl prevents compiler
         // from reusing guards/addressing from prior guarded loads
-        valid_items = ShuffleIndex<CUB_PTX_WARP_THREADS>(valid_items, 0, 0xffffffff);
+        valid_items = ShuffleIndex<CUB_PTX_WARP_THREADS>(valid_items, 0, 0xffffffffffffffffull);
 
         LoadDirectWarpStriped(threadIdx.x, d_values_in + block_offset, values, valid_items);
     }

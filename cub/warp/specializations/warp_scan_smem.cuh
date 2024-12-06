@@ -88,8 +88,8 @@ struct WarpScanSmem
 
     _TempStorage    &temp_storage;
     unsigned int    lane_id;
-    unsigned int    member_mask;
-
+    //unsigned int    member_mask;
+    unsigned long long  member_mask;
 
     /******************************************************************************
      * Construction
@@ -105,9 +105,12 @@ struct WarpScanSmem
             LaneId() :
             LaneId() % LOGICAL_WARP_THREADS),
 
-        member_mask((0xffffffff >> (32 - LOGICAL_WARP_THREADS)) << ((IS_ARCH_WARP || !IS_POW_OF_TWO ) ?
-            0 : // arch-width and non-power-of-two subwarps cannot be tiled with the arch-warp
-            ((LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS)))
+        // member_mask((0xffffffff >> (32 - LOGICAL_WARP_THREADS)) << ((IS_ARCH_WARP || !IS_POW_OF_TWO ) ?
+        //     0 : // arch-width and non-power-of-two subwarps cannot be tiled with the arch-warp
+        //     ((LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS)))
+        member_mask((0xffffffffffffffff >> (64 - LOGICAL_WARP_THREADS)) << ((IS_ARCH_WARP || !IS_POW_OF_TWO ) ?
+             0 : // arch-width and non-power-of-two subwarps cannot be tiled with the arch-warp
+             ((LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS)))
     {}
 
 

@@ -149,6 +149,7 @@ struct IterateThreadStore<MAX, MAX>
 /**
  * Define a uint4 (16B) ThreadStore specialization for the given Cache load modifier
  */
+#ifdef USE_GPU_FUSION_PTX
 #define _CUB_STORE_16(cub_modifier, ptx_modifier)                                            \
     template<>                                                                              \
     __device__ __forceinline__ void ThreadStore<cub_modifier, uint4*, uint4>(uint4* ptr, uint4 val)                         \
@@ -212,7 +213,6 @@ struct IterateThreadStore<MAX, MAX>
             "r"(val));                                                                      \
     }
 
-
 /**
  * Define a unsigned short (2B) ThreadStore specialization for the given Cache load modifier
  */
@@ -234,15 +234,65 @@ struct IterateThreadStore<MAX, MAX>
     __device__ __forceinline__ void ThreadStore<cub_modifier, unsigned char*, unsigned char>(unsigned char* ptr, unsigned char val)                         \
     {                                                                                       \
         asm volatile (                                                                      \
-        "{"                                                                                 \
         "   .reg .u8 datum;"                                                                \
         "   cvt.u8.u16 datum, %1;"                                                          \
         "   st."#ptx_modifier".u8 [%0], datum;"                                             \
-        "}" : :                                                                             \
+          : :                                                                             \
             _CUB_ASM_PTR_(ptr),                                                             \
             "h"((unsigned short) val));                                                               \
     }
 
+#else//USE_GPU_FUSION_PTX
+#define _CUB_STORE_16(cub_modifier, ptx_modifier)                                                                         \
+    template <>                                                                                                           \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, uint4 *, uint4>(uint4 * ptr, uint4 val)                     \
+    {                                                                                                                     \
+        __st##ptx_modifier(ptr, val);                                                                                     \
+    }                                                                                                                     \
+    template <>                                                                                                           \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, ulonglong2 *, ulonglong2>(ulonglong2 * ptr, ulonglong2 val) \
+    {                                                                                                                     \
+        __st##ptx_modifier(ptr, val);                                                                                     \
+    }
+
+#define _CUB_STORE_8(cub_modifier, ptx_modifier)                                                                                                         \
+    template <>                                                                                                                                          \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, ushort4 *, ushort4>(ushort4 * ptr, ushort4 val)                                            \
+    {                                                                                                                                                    \
+        __st##ptx_modifier(ptr, val);                                                                                                                    \
+    }                                                                                                                                                    \
+    template <>                                                                                                                                          \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, uint2 *, uint2>(uint2 * ptr, uint2 val)                                                    \
+    {                                                                                                                                                    \
+        __st##ptx_modifier(ptr, val);                                                                                                                    \
+    }                                                                                                                                                    \
+    template <>                                                                                                                                          \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, unsigned long long *, unsigned long long>(unsigned long long *ptr, unsigned long long val) \
+    {                                                                                                                                                    \
+        __st##ptx_modifier(ptr, val);                                                                                                                    \
+    }
+
+#define _CUB_STORE_4(cub_modifier, ptx_modifier)                                                                                 \
+    template <>                                                                                                                  \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, unsigned int *, unsigned int>(unsigned int *ptr, unsigned int val) \
+    {                                                                                                                            \
+        __st##ptx_modifier(ptr, val);                                                                                            \
+    }
+
+#define _CUB_STORE_2(cub_modifier, ptx_modifier)                                                                                         \
+    template <>                                                                                                                          \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, unsigned short *, unsigned short>(unsigned short *ptr, unsigned short val) \
+    {                                                                                                                                    \
+        __st##ptx_modifier(ptr, val);                                                                                                    \
+    }
+
+#define _CUB_STORE_1(cub_modifier, ptx_modifier)                                                                                     \
+    template <>                                                                                                                      \
+    __device__ __forceinline__ void ThreadStore<cub_modifier, unsigned char *, unsigned char>(unsigned char *ptr, unsigned char val) \
+    {                                                                                                                                \
+        __st##ptx_modifier(ptr, val);                                                                                                \
+    }
+#endif //USE_GPU_FUSION_PTX
 /**
  * Define powers-of-two ThreadStore specializations for the given Cache load modifier
  */
@@ -257,6 +307,7 @@ struct IterateThreadStore<MAX, MAX>
 /**
  * Define ThreadStore specializations for the various Cache load modifiers
  */
+#ifdef USE_GPU_FUSION_PTX
 #if CUB_PTX_ARCH >= 200
     _CUB_STORE_ALL(STORE_WB, wb)
     _CUB_STORE_ALL(STORE_CG, cg)
@@ -268,8 +319,12 @@ struct IterateThreadStore<MAX, MAX>
     _CUB_STORE_ALL(STORE_CS, global)
     _CUB_STORE_ALL(STORE_WT, volatile.global)
 #endif
-
-
+#else //USE_GPU_FUSION_PTX
+_CUB_STORE_ALL(STORE_WB, wb)
+_CUB_STORE_ALL(STORE_CG, cg)
+_CUB_STORE_ALL(STORE_CS, cs)
+_CUB_STORE_ALL(STORE_WT, wt)
+#endif //USE_GPU_FUSION_PTX
 // Macro cleanup
 #undef _CUB_STORE_ALL
 #undef _CUB_STORE_1

@@ -162,7 +162,11 @@ struct DeviceScanPolicy
     };
 
     /// SM520
+#ifdef USE_GPU_FUSION_DEFAULT_POLICY
     struct Policy520 : ChainedPolicy<520, Policy520, Policy350>
+#else //USE_GPU_FUSION_DEFAULT_POLICY
+    struct Policy520 : ChainedPolicy<520, Policy520, Policy520>
+#endif //USE_GPU_FUSION_DEFAULT_POLICY
     {
         // Titan X: 32.47B items/s @ 48M 32-bit T
         typedef AgentScanPolicy<
@@ -189,7 +193,11 @@ struct DeviceScanPolicy
     };
 
     /// MaxPolicy
+#ifdef USE_GPU_FUSION_DEFAULT_POLICY
     typedef Policy600 MaxPolicy;
+#else //USE_GPU_FUSION_DEFAULT_POLICY
+    typedef Policy520 MaxPolicy;
+#endif //USE_GPU_FUSION_DEFAULT_POLICY
 };
 
 

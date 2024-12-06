@@ -281,7 +281,11 @@ struct DeviceReducePolicy
     };
 
     /// SM60
+#ifdef USE_GPU_FUSION_DEFAULT_POLICY
     struct Policy600 : ChainedPolicy<600, Policy600, Policy350>
+#else //USE_GPU_FUSION_DEFAULT_POLICY
+    struct Policy600 : ChainedPolicy<600, Policy600, Policy600>
+#endif //USE_GPU_FUSION_DEFAULT_POLICY
     {
         // ReducePolicy (P100: 591 GB/s @ 64M 4B items; 583 GB/s @ 256M 1B items)
         typedef AgentReducePolicy<

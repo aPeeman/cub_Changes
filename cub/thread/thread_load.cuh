@@ -145,11 +145,13 @@ struct IterateThreadLoad<MAX, MAX>
 /**
  * Define a uint4 (16B) ThreadLoad specialization for the given Cache load modifier
  */
+#ifdef USE_GPU_FUSION_PTX
 #define _CUB_LOAD_16(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
     __device__ __forceinline__ uint4 ThreadLoad<cub_modifier, uint4 const *>(uint4 const *ptr)                   \
     {                                                                                       \
-        uint4 retval;                                                                       \
+        uint4 retval;      \  
+        __threadfence();                                                               \
         asm volatile ("ld."#ptx_modifier".v4.u32 {%0, %1, %2, %3}, [%4];" :                 \
             "=r"(retval.x),                                                                 \
             "=r"(retval.y),                                                                 \
@@ -161,7 +163,8 @@ struct IterateThreadLoad<MAX, MAX>
     template<>                                                                              \
     __device__ __forceinline__ ulonglong2 ThreadLoad<cub_modifier, ulonglong2 const *>(ulonglong2 const *ptr)    \
     {                                                                                       \
-        ulonglong2 retval;                                                                  \
+        ulonglong2 retval;   \
+        __threadfence();                                                               \
         asm volatile ("ld."#ptx_modifier".v2.u64 {%0, %1}, [%2];" :                         \
             "=l"(retval.x),                                                                 \
             "=l"(retval.y) :                                                                \
@@ -176,7 +179,8 @@ struct IterateThreadLoad<MAX, MAX>
     template<>                                                                              \
     __device__ __forceinline__ ushort4 ThreadLoad<cub_modifier, ushort4 const *>(ushort4 const *ptr)             \
     {                                                                                       \
-        ushort4 retval;                                                                     \
+        ushort4 retval;   \                  
+        __threadfence();                                              \
         asm volatile ("ld."#ptx_modifier".v4.u16 {%0, %1, %2, %3}, [%4];" :                 \
             "=h"(retval.x),                                                                 \
             "=h"(retval.y),                                                                 \
@@ -188,7 +192,8 @@ struct IterateThreadLoad<MAX, MAX>
     template<>                                                                              \
     __device__ __forceinline__ uint2 ThreadLoad<cub_modifier, uint2 const *>(uint2 const *ptr)                   \
     {                                                                                       \
-        uint2 retval;                                                                       \
+        uint2 retval;      \
+        __threadfence();                                                                 \
         asm volatile ("ld."#ptx_modifier".v2.u32 {%0, %1}, [%2];" :                         \
             "=r"(retval.x),                                                                 \
             "=r"(retval.y) :                                                                \
@@ -198,7 +203,8 @@ struct IterateThreadLoad<MAX, MAX>
     template<>                                                                              \
     __device__ __forceinline__ unsigned long long ThreadLoad<cub_modifier, unsigned long long const *>(unsigned long long const *ptr)    \
     {                                                                                       \
-        unsigned long long retval;                                                          \
+        unsigned long long retval;\   
+        __threadfence();                                                       \
         asm volatile ("ld."#ptx_modifier".u64 %0, [%1];" :                                  \
             "=l"(retval) :                                                                  \
             _CUB_ASM_PTR_(ptr));                                                            \
@@ -212,7 +218,8 @@ struct IterateThreadLoad<MAX, MAX>
     template<>                                                                              \
     __device__ __forceinline__ unsigned int ThreadLoad<cub_modifier, unsigned int const *>(unsigned int const *ptr)                      \
     {                                                                                       \
-        unsigned int retval;                                                                \
+        unsigned int retval; \
+        __threadfence();                                                               \
         asm volatile ("ld."#ptx_modifier".u32 %0, [%1];" :                                  \
             "=r"(retval) :                                                                  \
             _CUB_ASM_PTR_(ptr));                                                            \
@@ -227,7 +234,8 @@ struct IterateThreadLoad<MAX, MAX>
     template<>                                                                              \
     __device__ __forceinline__ unsigned short ThreadLoad<cub_modifier, unsigned short const *>(unsigned short const *ptr)                \
     {                                                                                       \
-        unsigned short retval;                                                              \
+        unsigned short retval;\
+        __threadfence();                                                              \
         asm volatile ("ld."#ptx_modifier".u16 %0, [%1];" :                                  \
             "=h"(retval) :                                                                  \
             _CUB_ASM_PTR_(ptr));                                                            \
@@ -242,19 +250,77 @@ struct IterateThreadLoad<MAX, MAX>
     template<>                                                                              \
     __device__ __forceinline__ unsigned char ThreadLoad<cub_modifier, unsigned char const *>(unsigned char const *ptr)                   \
     {                                                                                       \
-        unsigned short retval;                                                              \
+        unsigned short retval;  \
+        __threadfence();                                                            \
         asm volatile (                                                                      \
-        "{"                                                                                 \
         "   .reg .u8 datum;"                                                                \
         "    ld."#ptx_modifier".u8 datum, [%1];"                                            \
         "    cvt.u16.u8 %0, datum;"                                                         \
-        "}" :                                                                               \
+         :                                                                               \
             "=h"(retval) :                                                                  \
             _CUB_ASM_PTR_(ptr));                                                            \
         return (unsigned char) retval;                                                      \
     }
 
+#else //USE_GPU_FUSION_PTX
+#define _CUB_LOAD_16(cub_modifier, ptx_modifier)                                                              \
+    template <>                                                                                               \
+    __device__ __forceinline__ uint4 ThreadLoad<cub_modifier, uint4 const *>(uint4 const *ptr)                \
+    {                                                                                                         \
+        __threadfence();                                                                                      \
+        return __ld##ptx_modifier(ptr);                                                                       \
+    }                                                                                                         \
+    template <>                                                                                               \
+    __device__ __forceinline__ ulonglong2 ThreadLoad<cub_modifier, ulonglong2 const *>(ulonglong2 const *ptr) \
+    {                                                                                                         \
+        __threadfence();                                                                                      \
+        return __ld##ptx_modifier(ptr);                                                                       \
+    }
 
+#define _CUB_LOAD_8(cub_modifier, ptx_modifier)                                                                                       \
+    template <>                                                                                                                       \
+    __device__ __forceinline__ ushort4 ThreadLoad<cub_modifier, ushort4 const *>(ushort4 const *ptr)                                  \
+    {                                                                                                                                 \
+        __threadfence();                                                                                                              \
+        return __ld##ptx_modifier(ptr);                                                                                               \
+    }                                                                                                                                 \
+    template <>                                                                                                                       \
+    __device__ __forceinline__ uint2 ThreadLoad<cub_modifier, uint2 const *>(uint2 const *ptr)                                        \
+    {                                                                                                                                 \
+        __threadfence();                                                                                                              \
+        return __ld##ptx_modifier(ptr);                                                                                               \
+    }                                                                                                                                 \
+    template <>                                                                                                                       \
+    __device__ __forceinline__ unsigned long long ThreadLoad<cub_modifier, unsigned long long const *>(unsigned long long const *ptr) \
+    {                                                                                                                                 \
+        __threadfence();                                                                                                              \
+        return __ld##ptx_modifier(ptr);                                                                                               \
+    }
+
+#define _CUB_LOAD_4(cub_modifier, ptx_modifier)                                                                     \
+    template <>                                                                                                     \
+    __device__ __forceinline__ unsigned int ThreadLoad<cub_modifier, unsigned int const *>(unsigned int const *ptr) \
+    {                                                                                                               \
+        __threadfence();                                                                                            \
+        return __ld##ptx_modifier(ptr);                                                                             \
+    }
+
+#define _CUB_LOAD_2(cub_modifier, ptx_modifier)                                                                           \
+    template <>                                                                                                           \
+    __device__ __forceinline__ unsigned short ThreadLoad<cub_modifier, unsigned short const *>(unsigned short const *ptr) \
+    {                                                                                                                     \
+        __threadfence();                                                                                                  \
+        return __ld##ptx_modifier(ptr);                                                                                   \
+    }
+
+#define _CUB_LOAD_1(cub_modifier, ptx_modifier)                                                                        \
+    template <>                                                                                                        \
+    __device__ __forceinline__ unsigned char ThreadLoad<cub_modifier, unsigned char const *>(unsigned char const *ptr) \
+    {                                                                                                                  \
+        __threadfence();                                                                                               \
+        return __ld##ptx_modifier(ptr);                                                                                \
+    }
+#endif //USE_GPU_FUSION_PTX
 /**
  * Define powers-of-two ThreadLoad specializations for the given Cache load modifier
  */
@@ -269,6 +335,7 @@ struct IterateThreadLoad<MAX, MAX>
 /**
  * Define powers-of-two ThreadLoad specializations for the various Cache load modifiers
  */
+#ifdef USE_GPU_FUSION_PTX
 #if CUB_PTX_ARCH >= 200
     _CUB_LOAD_ALL(LOAD_CA, ca)
     _CUB_LOAD_ALL(LOAD_CG, cg)
@@ -287,8 +354,13 @@ struct IterateThreadLoad<MAX, MAX>
 #else
     _CUB_LOAD_ALL(LOAD_LDG, global)
 #endif
-
-
+#else //USE_GPU_FUSION_PTX
+_CUB_LOAD_ALL(LOAD_CA, ca)
+_CUB_LOAD_ALL(LOAD_CG, cg)
+_CUB_LOAD_ALL(LOAD_CS, cs)
+_CUB_LOAD_ALL(LOAD_CV, cv)
+_CUB_LOAD_ALL(LOAD_LDG, g)
+#endif //USE_GPU_FUSION_PTX
 // Macro cleanup
 #undef _CUB_LOAD_ALL
 #undef _CUB_LOAD_1

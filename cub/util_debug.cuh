@@ -149,9 +149,10 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
     #endif
 #endif
 
-
-
-
+#ifdef _CubLog
+#define FMT(__fmt__) "\033[0;31m%s[%d]-<%s>: \033[0;31m" __fmt__
+#define _CubLog(__fmt__, ...) printf(FMT(__fmt__), __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#endif
 /** @} */       // end group UtilMgmt
 
 CUB_NAMESPACE_END

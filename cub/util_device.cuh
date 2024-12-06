@@ -376,8 +376,11 @@ CUB_RUNTIME_FUNCTION inline cudaError_t PtxVersionUncached(int& ptx_version)
                     break;
             }
             while(0);
-
-            ptx_version = empty_kernel_attrs.ptxVersion * 10;
+            #ifdef USE_GPU_FUSION_DEFAULT_POLICY
+                ptx_version = empty_kernel_attrs.ptxVersion * 10;
+            #else //USE_GPU_FUSION_DEFAULT_POLICY
+                ptx_version = 520;
+            #endif //USE_GPU_FUSION_DEFAULT_POLICY
         #endif
     } else {
         #if CUB_INCLUDE_DEVICE_CODE

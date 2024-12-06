@@ -319,7 +319,7 @@ __global__ void DeviceRadixSortSingleTileKernel(
     {
         // Register pressure work-around: moving num_items through shfl prevents compiler
         // from reusing guards/addressing from prior guarded loads
-        num_items = ShuffleIndex<CUB_PTX_WARP_THREADS>(num_items, 0, 0xffffffff);
+        num_items = ShuffleIndex<CUB_PTX_WARP_THREADS>(num_items, 0, 0xffffffffffffffffull);
 
         BlockLoadValues(temp_storage.load_values).Load(d_values_in, values, num_items);
 
@@ -684,8 +684,12 @@ struct DeviceRadixSortPolicy
     };
 
 
-    /// SM50
+    /// 
+#ifdef USE_GPU_FUSION_DEFAULT_POLICY
     struct Policy500 : ChainedPolicy<500, Policy500, Policy350>
+#else //USE_GPU_FUSION_DEFAULT_POLICY
+    struct Policy500 : ChainedPolicy<500, Policy500, Policy500>
+#endif //USE_GPU_FUSION_DEFAULT_POLICY
     {
         enum {
             PRIMARY_RADIX_BITS      = (sizeof(KeyT) > 1) ? 7 : 5,    // 3.5B 32b keys/s, 1.92B 32b pairs/s (TitanX)
@@ -710,8 +714,8 @@ struct DeviceRadixSortPolicy
         typedef AgentScanPolicy <512, 23, OffsetT, BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, BLOCK_STORE_WARP_TRANSPOSE, BLOCK_SCAN_RAKING_MEMOIZE> ScanPolicy;
 
         // Downsweep policies
-        typedef AgentRadixSortDownsweepPolicy <160, 39, DominantT,  BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_BASIC, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS>  DownsweepPolicy;
-        typedef AgentRadixSortDownsweepPolicy <256, 16, DominantT,  BLOCK_LOAD_DIRECT, LOAD_LDG, RADIX_RANK_MEMOIZE, BLOCK_SCAN_RAKING_MEMOIZE, PRIMARY_RADIX_BITS - 1>   AltDownsweepPolicy;
+        typedef AgentRadixSortDownsweepPolicy <64, 39, DominantT,  BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_BASIC, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS>  DownsweepPolicy;
+        typedef AgentRadixSortDownsweepPolicy <64, 16, DominantT,  BLOCK_LOAD_DIRECT, LOAD_LDG, RADIX_RANK_MEMOIZE, BLOCK_SCAN_RAKING_MEMOIZE, PRIMARY_RADIX_BITS - 1>   AltDownsweepPolicy;
 
         // Upsweep policies
         typedef DownsweepPolicy UpsweepPolicy;
@@ -721,8 +725,8 @@ struct DeviceRadixSortPolicy
         typedef AgentRadixSortDownsweepPolicy <256, 19, DominantT,  BLOCK_LOAD_DIRECT, LOAD_LDG, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, SINGLE_TILE_RADIX_BITS> SingleTilePolicy;
 
         // Segmented policies
-        typedef AgentRadixSortDownsweepPolicy <192, 31, DominantT,  BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, SEGMENTED_RADIX_BITS>   SegmentedPolicy;
-        typedef AgentRadixSortDownsweepPolicy <256, 11, DominantT,  BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, SEGMENTED_RADIX_BITS - 1>       AltSegmentedPolicy;
+        typedef AgentRadixSortDownsweepPolicy <64, 39, DominantT,  BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, SEGMENTED_RADIX_BITS>   SegmentedPolicy;
+        typedef AgentRadixSortDownsweepPolicy <64, 39, DominantT,  BLOCK_LOAD_WARP_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, SEGMENTED_RADIX_BITS - 1>       AltSegmentedPolicy;
     };
 
 
@@ -939,7 +943,11 @@ struct DeviceRadixSortPolicy
 
 
     /// MaxPolicy
+#ifdef USE_GPU_FUSION_DEFAULT_POLICY
     typedef Policy800 MaxPolicy;
+#else //USE_GPU_FUSION_DEFAULT_POLICY
+    typedef Policy500 MaxPolicy;
+#endif //USE_GPU_FUSION_DEFAULT_POLICY
 
 
 };

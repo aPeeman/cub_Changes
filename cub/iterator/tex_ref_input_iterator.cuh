@@ -30,7 +30,7 @@
  * \file
  * Random-access iterator types
  */
-
+#ifdef USE_GPU_FUSION_TEXTURE_REF
 #pragma once
 
 #include <iterator>
@@ -415,3 +415,19 @@ public:
 CUB_NAMESPACE_END
 
 #endif // CUDART_VERSION
+#else //USE_GPU_FUSION_TEXTURE_REF
+
+#pragma once
+
+#include <cub/iterator/tex_obj_input_iterator.cuh>
+
+CUB_NAMESPACE_BEGIN
+
+template <
+    typename    T,
+    int         /*UNIQUE_ID*/,
+    typename    OffsetT = std::ptrdiff_t>
+using TexRefInputIterator CUB_DEPRECATED = cub::TexObjInputIterator<T, OffsetT>;
+
+CUB_NAMESPACE_END
+#endif

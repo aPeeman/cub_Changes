@@ -93,6 +93,7 @@ struct BaseDigitExtractor
 
     static __device__ __forceinline__ UnsignedBits ProcessFloatMinusZero(UnsignedBits key)
     {
+        CTA_SYNC();
         if (!FLOAT_KEY) {
             return key;
         } else {

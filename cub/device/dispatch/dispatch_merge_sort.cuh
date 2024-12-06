@@ -216,7 +216,11 @@ struct DeviceMergeSortPolicy
                            cub::BLOCK_STORE_WARP_TRANSPOSE>;
   };
 
+#ifdef USE_GPU_FUSION_DEFAULT_POLICY
   struct Policy520 : ChainedPolicy<520, Policy520, Policy350>
+#else //USE_GPU_FUSION_DEFAULT_POLICY
+  struct Policy520 : ChainedPolicy<520, Policy520, Policy520>
+#endif //USE_GPU_FUSION_DEFAULT_POLICY
   {
     using MergeSortPolicy =
       AgentMergeSortPolicy<512,
@@ -238,7 +242,12 @@ struct DeviceMergeSortPolicy
 
 
   /// MaxPolicy
+#ifdef USE_GPU_FUSION_DEFAULT_POLICY
   using MaxPolicy = Policy600;
+#else //USE_GPU_FUSION_DEFAULT_POLICY
+  using MaxPolicy = Policy520;
+#endif //USE_GPU_FUSION_DEFAULT_POLICY
+
 };
 
 template <typename KeyInputIteratorT,

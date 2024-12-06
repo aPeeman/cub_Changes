@@ -97,8 +97,8 @@ struct WarpReduceSmem
 
     _TempStorage    &temp_storage;
     unsigned int    lane_id;
-    unsigned int    member_mask;
-
+    //unsigned int    member_mask;
+    unsigned long long member_mask;
 
     /******************************************************************************
      * Construction
@@ -107,16 +107,19 @@ struct WarpReduceSmem
     /// Constructor
     __device__ __forceinline__ WarpReduceSmem(
         TempStorage     &temp_storage)
-    :
+        :
         temp_storage(temp_storage.Alias()),
 
         lane_id(IS_ARCH_WARP ?
             LaneId() :
             LaneId() % LOGICAL_WARP_THREADS),
 
-        member_mask((0xffffffff >> (32 - LOGICAL_WARP_THREADS)) << ((IS_ARCH_WARP || !IS_POW_OF_TWO ) ?
-            0 : // arch-width and non-power-of-two subwarps cannot be tiled with the arch-warp
-            ((LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS)))
+        // member_mask((0xffffffff >> (32 - LOGICAL_WARP_THREADS)) << ((IS_ARCH_WARP || !IS_POW_OF_TWO ) ?
+        //      0 : // arch-width and non-power-of-two subwarps cannot be tiled with the arch-warp
+        //      ((LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS)))
+             member_mask((0xffffffffffffffff >> (64 - LOGICAL_WARP_THREADS)) << ((IS_ARCH_WARP || !IS_POW_OF_TWO ) ?
+             0 : // arch-width and non-power-of-two subwarps cannot be tiled with the arch-warp
+             ((LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS)))
     {}
 
     /******************************************************************************
@@ -195,7 +198,8 @@ struct WarpReduceSmem
         Int2Type<true>  /*has_ballot*/)         ///< [in] Marker type for whether the target arch has ballot functionality
     {
         // Get the start flags for each thread in the warp.
-        int warp_flags = WARP_BALLOT(flag, member_mask);
+        //int warp_flags = WARP_BALLOT(flag, member_mask);
+        unsigned long long warp_flags = WARP_BALLOT(flag, member_mask);
 
         if (!HEAD_SEGMENTED)
             warp_flags <<= 1;
@@ -210,10 +214,12 @@ struct WarpReduceSmem
         }
 
         // Find next flag
-        int next_flag = __clz(__brev(warp_flags));
+        //int next_flag = __clz(__brev(warp_flags));
+        int next_flag = __clzll(__brevll(warp_flags));
 
         // Clip the next segment at the warp boundary if necessary
-        if (LOGICAL_WARP_THREADS != 32)
+        //if (LOGICAL_WARP_THREADS != 32)
+        if (LOGICAL_WARP_THREADS != 64)
             next_flag = CUB_MIN(next_flag, LOGICAL_WARP_THREADS);
 
         #pragma unroll

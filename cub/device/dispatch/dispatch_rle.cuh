@@ -153,7 +153,7 @@ struct DeviceRleDispatch
         };
 
         typedef AgentRlePolicy<
-                96,
+                192,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,

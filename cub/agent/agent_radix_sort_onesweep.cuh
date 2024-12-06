@@ -244,7 +244,7 @@ struct AgentRadixSortOnesweep
             if (FULL_BINS || bin < RADIX_DIGITS)
             {
                 OffsetT inc_sum = bins[u];
-                int want_mask = ~0;
+                unsigned long long want_mask = ~0;
                 // backtrack as long as necessary
                 for (OffsetT block_jdx = block_idx - 1; block_jdx >= 0; --block_jdx)
                 {
